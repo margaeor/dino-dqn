@@ -10,8 +10,8 @@ import numpy as np
 import gym
 from gym import spaces
 
-from dino_dqn.gym_chrome_dino.utils.atari_wrappers import FrameStack
-from dino_dqn.gym_chrome_dino.utils.helpers import Timer
+from dino_dqn.gym_chrome_dino2.utils.atari_wrappers import FrameStack
+from dino_dqn.gym_chrome_dino2.utils.helpers import Timer
 
 cv2.ocl.setUseOpenCL(False)
 

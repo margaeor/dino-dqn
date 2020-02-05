@@ -8,12 +8,12 @@ from gym.envs.registration import register
 
 register(
     id='ChromeDino-v0', 
-    entry_point='gym_chrome_dino.envs:ChromeDinoEnv', 
+    entry_point='gym_chrome_dino2.envs:ChromeDinoEnv',
     kwargs={'render': True, 'accelerate': False, 'autoscale': False}
 )
 
 register(
     id='ChromeDinoNoBrowser-v0', 
-    entry_point='gym_chrome_dino.envs:ChromeDinoEnv', 
+    entry_point='gym_chrome_dino2.envs:ChromeDinoEnv',
     kwargs={'render': False, 'accelerate': False, 'autoscale': False}
 )

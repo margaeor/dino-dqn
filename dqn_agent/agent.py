@@ -17,37 +17,29 @@ MIN_EXPERIENCE_REPLAY_SIZE = 1000  # Minimum number of steps in a memory to star
 LEARNING_RATE = 0.001 # Adam optimizer learning rate
 MINIBATCH_SIZE = 64  # Size of training batch
 UPDATE_TARGET_EVERY = 5  # Update target every 5 episodes
-MODEL_NAME = 'first'
-MIN_REWARD = -200  # Minimum reward required to save the model
-GPU_MEMORY_FRACTION = 0.8 # Defines fraction of GPU memory used by tf
+GPU_MEMORY_LIMIT = 4096 # Defines fraction of GPU memory used by tf
 
-# Number of training episodes
-EPISODES = 20000
-
-# Exploration settings
-epsilon = 1  # not a constant, going to be decayed
-EPSILON_DECAY = 0.99975
-
-#  Stats settings
-AGGREGATE_STATS_EVERY = 50  # episodes
-SHOW_PREVIEW = False
 
 
 class DQNAgent:
-    def __init__(self, input_size, output_size, load_data=False):
+    def __init__(self, input_size, output_size, model_name, load_data=False):
 
-        # Our main DQN model
-        self.policy_model = self.create_model()
-
-        # Configure paths
-        self.log_dir = "logs/{}-{}".format(MODEL_NAME, int(time.time()))
-        self.checkpoint_path = "checkpoints/{}.ckpt".format(MODEL_NAME)
+        self.MODEL_NAME = model_name
 
         # DQN network input and output size.
         # input_size corresponds to image dimensions and
         # output_size corresponds to the number of actions
         self.input_size = input_size
         self.output_size = output_size
+
+        #self.limit_gpu_usage(GPU_MEMORY_LIMIT)
+
+        # Our main DQN model
+        self.policy_model = self.create_model()
+
+        # Configure paths
+        self.log_dir = os.path.join("logs","{}-{}".format(self.MODEL_NAME, int(time.time())))
+        self.checkpoint_path = os.path.join("checkpoints/","{}.ckpt".format(self.MODEL_NAME))
 
         # Target network used for smoother training
         self.target_model = self.create_model()
@@ -62,6 +54,8 @@ class DQNAgent:
             update_freq='epoch'
         )
 
+        self.logger = tf.summary.create_file_writer(self.log_dir)
+
         # Checkpoint object used to save and retrieve our model upon request
         self.cp_callback = keras.callbacks.ModelCheckpoint(
             filepath=self.checkpoint_path,
@@ -72,11 +66,26 @@ class DQNAgent:
         # Used to count when to update target network with main network's weights
         self.target_update_counter = 0
 
-        tf.config.gpu.set_per_process_memory_fraction(GPU_MEMORY_FRACTION)
-        tf.config.gpu.set_per_process_memory_growth(True)
+
 
         if load_data:
             self.restore_model()
+
+    def limit_gpu_usage(self,memory_limit):
+
+        gpus = tf.config.experimental.list_physical_devices('GPU')
+        if gpus:
+            # Restrict TensorFlow to only allocate 1GB of memory on the first GPU
+            try:
+                tf.config.experimental.set_virtual_device_configuration(
+                    gpus[0],
+                    [tf.config.experimental.VirtualDeviceConfiguration(memory_limit=memory_limit)])
+                logical_gpus = tf.config.experimental.list_logical_devices('GPU')
+                print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
+            except RuntimeError as e:
+                # Virtual devices must be set before GPUs have been initialized
+                print(e)
+
 
     def restore_model(self,path=None):
 
@@ -92,8 +101,9 @@ class DQNAgent:
 
 
     def create_model(self):
+        input_size = self.input_size
         model = keras.models.Sequential([
-            keras.layers.Conv2D(256, (3, 3), input_shape=self.input_size),
+            keras.layers.Conv2D(256, (3, 3), input_shape=input_size),
             keras.layers.Activation('relu'),
             keras.layers.MaxPooling2D(pool_size=(2, 2)),
             keras.layers.Dropout(0.2),
@@ -115,7 +125,7 @@ class DQNAgent:
 
 
     # Trains main network every step during episode
-    def train_step(self, terminal_state, step):
+    def train_step(self, terminal_state):
 
         # Start training only if certain number of samples is already saved
         if len(self.replay_memory) < MIN_EXPERIENCE_REPLAY_SIZE:
@@ -157,7 +167,7 @@ class DQNAgent:
 
         # Fit on all samples as one batch, log only on terminal state
         self.policy_model.fit(np.array(X) / 255, np.array(y), batch_size=MINIBATCH_SIZE, verbose=0, shuffle=False,
-                              callbacks=[self.tensorboard,self.cp_callback] if terminal_state else [self.cp_callback])
+                              callbacks=[self.cp_callback] if terminal_state else [self.cp_callback])
 
         # Update target network counter every episode
         if terminal_state:

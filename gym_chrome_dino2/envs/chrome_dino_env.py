@@ -15,8 +15,8 @@ import gym
 from gym import error, spaces, utils
 from gym.utils import seeding
 
-from dino_dqn.gym_chrome_dino.game import DinoGame
-from dino_dqn.gym_chrome_dino.utils.helpers import rgba2rgb
+from dino_dqn.gym_chrome_dino2.game import DinoGame
+from dino_dqn.gym_chrome_dino2.utils.helpers import rgba2rgb
 
 class ChromeDinoEnv(gym.Env):
     metadata = {'render.modes': ['rgb_array'], 'video.frames_per_second': 10}

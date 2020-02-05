@@ -9,7 +9,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.keys import Keys
 
-from dino_dqn.gym_chrome_dino.utils.helpers import download_chromedriver
+from dino_dqn.gym_chrome_dino2.utils.helpers import download_chromedriver
 
 class DinoGame():
     def __init__(self, render=False, accelerate=False, autoscale=False):
