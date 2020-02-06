@@ -6,6 +6,7 @@ from tensorflow import keras
 from collections import deque
 import time
 import random
+import pickle
 
 import os
 from PIL import Image
@@ -43,8 +44,8 @@ class DQNAgent:
         self.target_model = self.create_model()
         self.target_model.set_weights(self.policy_model.get_weights())
 
-        self.restore_model(os.path.join('models','google____68.00max___47.60avg___42.00min__1580950690'))
-        self.starting_episode = 401
+        self.restore_model(os.path.join('google_16__800____69.00max___55.00avg___42.00min__1581012579'))
+        self.starting_episode = 801
 
 
         # Configure paths
@@ -103,6 +104,10 @@ class DQNAgent:
             self.policy_model = keras.models.load_model(path)
             #self.policy_model.load_weights(path)
             self.target_model.set_weights(self.policy_model.get_weights())
+            replay_mem = self.unpickle_data(os.path.join(path,'replay_mem.pickle'))
+
+            if replay_mem:
+                self.replay_memory = replay_mem
 
         except Exception:
             print("Could not load weights")
@@ -150,12 +155,12 @@ class DQNAgent:
 
         # Get current states from minibatch, then query policy network
         # for Q values
-        current_states = np.array([entry[0] for entry in minibatch]) / 255
+        current_states = tf.cast(np.array([entry[0] for entry in minibatch]),tf.float16)
         current_qs_list = self.policy_model.predict(current_states)
 
         # Get future states from minibatch, then query target model for Q values
         # for future Q values
-        future_states = np.array([entry[3] for entry in minibatch]) / 255
+        future_states = tf.cast(np.array([entry[3] for entry in minibatch]),tf.float16)
         future_qs_list = self.target_model.predict(future_states)
 
         X = []
@@ -180,7 +185,9 @@ class DQNAgent:
             y.append(current_qs)
 
         # Fit on all samples as one batch, log only on terminal state
-        self.policy_model.fit(np.array(X) / 255, np.array(y), batch_size=MINIBATCH_SIZE, verbose=0, shuffle=False,
+        tf_X = tf.cast(np.array(X),tf.float16)
+        tf_y = tf.cast(np.array(y), tf.float16)
+        self.policy_model.fit(tf_X, tf_y, batch_size=MINIBATCH_SIZE, verbose=0, shuffle=False,
                               callbacks=[] if terminal_state else [])
 
         # Update target network counter every episode
@@ -193,7 +200,27 @@ class DQNAgent:
             self.target_update_counter = 0
 
 
+    # Pickle data to file
+    def pickle_data(self,file,data):
+        with open(file, 'wb') as f:
+            # Pickle the metadata file.
+            pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
+
+
+    # Unpickle data from file
+    def unpickle_data(self, file):
+
+        if os.path.isfile(file) and os.path.isfile(file):
+            try:
+                data = pickle.load(file)
+                return data
+            except Exception:
+                return None
+
+
+
     # Queries main network for Q values given current observation space (environment state)
     def get_qs(self, state):
-        return self.policy_model.predict(np.array(state).reshape(-1, *state.shape) / 255)[0]
+        input = tf.cast(np.array(state).reshape(-1, *state.shape),tf.float16)
+        return self.policy_model.predict(input)[0]
 

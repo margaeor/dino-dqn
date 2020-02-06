@@ -6,7 +6,7 @@ import os
 from .agent import DQNAgent
 import tensorflow as tf
 
-MODEL_NAME = 'google'
+MODEL_NAME = 'google_16'
 
 # Number of training episodes
 EPISODES = 50000
@@ -114,9 +114,9 @@ class Broker:
                 # Save model, but only when min reward is greater or equal a set value
                 if min_reward >= MIN_REWARD or (episode % SAVE_MODEL_EVERY == 0):
                     #self.agent.policy_model.save(f'./models/{MODEL_NAME}__{max_reward:_>7.2f}max_{average_reward:_>7.2f}avg_{min_reward:_>7.2f}min__{int(time.time())}')
-                    self.agent.policy_model.save(
-                        os.path.join('models',f'{MODEL_NAME}__{episode}__{max_reward:_>7.2f}max_{average_reward:_>7.2f}avg_{min_reward:_>7.2f}min__{int(time.time())}')
-                    )
+                    model_path = os.path.join('models',f'{MODEL_NAME}__{episode}__{max_reward:_>7.2f}max_{average_reward:_>7.2f}avg_{min_reward:_>7.2f}min__{int(time.time())}')
+                    self.agent.policy_model.save(model_path)
+                    self.agent.pickle_data(os.path.join(model_path,'replay_mem.pickle'),self.agent.replay_memory)
 
             # Decay epsilon
             self.epsilon = self.epsilon_values[episode-1]
