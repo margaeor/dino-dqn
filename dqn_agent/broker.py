@@ -4,20 +4,20 @@ import time
 import cv2.cv2 as cv2
 import os
 from .agent import DQNAgent
+import tensorflow as tf
 
-MODEL_NAME = 'first'
+MODEL_NAME = 'google'
 
 # Number of training episodes
-EPISODES = 20000
-
-# Exploration settings
-EPSILON_DECAY = 0.99975
+EPISODES = 50000
 
 #  Stats settings
-AGGREGATE_STATS_EVERY = 50  # episodes
+AGGREGATE_STATS_EVERY = 5  # episodes
 SHOW_PREVIEW = False
-MIN_REWARD = -200  # Minimum reward required to save the model
+MIN_REWARD = 90  # Minimum score required to save the model
 MIN_EPSILON = 0.001
+INITIAL_EPSILON = 0.1
+SAVE_MODEL_EVERY = 100
 
 class Broker:
 
@@ -27,10 +27,13 @@ class Broker:
         self.env = env
 
         # DQN Agent
-        self.agent = DQNAgent((80,160,4),self.env.action_space.n,MODEL_NAME,**kwargs)
+        self.agent = DQNAgent((84,84,4),self.env.action_space.n,MODEL_NAME,**kwargs)
 
         # Decaying variable used for exploration-exploitation
-        self.epsilon = 1
+        self.epsilon = INITIAL_EPSILON
+
+        self.epsilon_values = np.linspace(INITIAL_EPSILON, MIN_EPSILON, EPISODES)
+
 
         # Episode rewards
         self.ep_rewards = []
@@ -52,7 +55,7 @@ class Broker:
     def train(self):
 
         # Iterate over episodes
-        for episode in tqdm(range(1, EPISODES + 1), ascii=True, unit='episodes'):
+        for episode in tqdm(range(self.agent.starting_episode, EPISODES + 1), ascii=True, unit='episodes'):
 
             # Update tensorboard step every episode
             self.agent.tensorboard.step = episode
@@ -94,21 +97,26 @@ class Broker:
                 step += 1
 
             # Append episode reward to a list and log stats (every given number of episodes)
-            self.ep_rewards.append(episode_reward)
+            score = self.env.get_score()
+            self.ep_rewards.append(score)
             if not episode % AGGREGATE_STATS_EVERY or episode == 1:
                 average_reward = sum(self.ep_rewards[-AGGREGATE_STATS_EVERY:])/len(self.ep_rewards[-AGGREGATE_STATS_EVERY:])
                 min_reward = min(self.ep_rewards[-AGGREGATE_STATS_EVERY:])
                 max_reward = max(self.ep_rewards[-AGGREGATE_STATS_EVERY:])
                 #self.agent.tensorboard.update_stats(reward_avg=average_reward, reward_min=min_reward, reward_max=max_reward, epsilon=self.epsilon)
+                with self.agent.logger.as_default():
+                    tf.summary.scalar('avg_reward',average_reward,step=episode)
+                    tf.summary.scalar('min_reward', min_reward, step=episode)
+                    tf.summary.scalar('max_reward', max_reward, step=episode)
+                    tf.summary.scalar('epsilon', self.epsilon, step=episode)
+                    print(f"Min is {min_reward}, max is {max_reward}, avg is {average_reward}")
 
                 # Save model, but only when min reward is greater or equal a set value
-                if min_reward >= MIN_REWARD:
+                if min_reward >= MIN_REWARD or (episode % SAVE_MODEL_EVERY == 0):
                     #self.agent.policy_model.save(f'./models/{MODEL_NAME}__{max_reward:_>7.2f}max_{average_reward:_>7.2f}avg_{min_reward:_>7.2f}min__{int(time.time())}')
                     self.agent.policy_model.save(
-                        os.path.join('models',f'{MODEL_NAME}__{max_reward:_>7.2f}max_{average_reward:_>7.2f}avg_{min_reward:_>7.2f}min__{int(time.time())}')
+                        os.path.join('models',f'{MODEL_NAME}__{episode}__{max_reward:_>7.2f}max_{average_reward:_>7.2f}avg_{min_reward:_>7.2f}min__{int(time.time())}')
                     )
 
             # Decay epsilon
-            if self.epsilon > MIN_EPSILON:
-                self.epsilon *= EPSILON_DECAY
-                self.epsilon = max(MIN_EPSILON, self.epsilon)
+            self.epsilon = self.epsilon_values[episode-1]
