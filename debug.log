@@ -1,2 +1,20 @@
 [0206/181247.960:ERROR:process_info.cc(359)] UncheckedAllocate
 [0207/000511.455:ERROR:process_info.cc(359)] UncheckedAllocate
+[0208/140945.367:ERROR:process_reader_win.cc(151)] SuspendThread: Access is denied. (0x5)
+[0208/140945.368:ERROR:process_reader_win.cc(151)] SuspendThread: Access is denied. (0x5)
+[0208/140945.368:ERROR:process_reader_win.cc(151)] SuspendThread: Access is denied. (0x5)
+[0208/140945.369:ERROR:process_reader_win.cc(151)] SuspendThread: Access is denied. (0x5)
+[0208/140945.369:ERROR:process_reader_win.cc(123)] NtOpenThread: {Access Denied} A process has requested access to an object, but has not been granted those access rights. (0xc0000022)
+[0208/140945.369:ERROR:exception_snapshot_win.cc(98)] thread ID 9372 not found in process
+[0208/142411.020:ERROR:process_reader_win.cc(151)] SuspendThread: Access is denied. (0x5)
+[0208/142411.020:ERROR:process_reader_win.cc(151)] SuspendThread: Access is denied. (0x5)
+[0208/142411.021:ERROR:process_reader_win.cc(151)] SuspendThread: Access is denied. (0x5)
+[0208/142411.021:ERROR:process_reader_win.cc(123)] NtOpenThread: {Access Denied} A process has requested access to an object, but has not been granted those access rights. (0xc0000022)
+[0208/142411.021:ERROR:exception_snapshot_win.cc(98)] thread ID 16772 not found in process
+[0208/142726.094:ERROR:process_reader_win.cc(151)] SuspendThread: Access is denied. (0x5)
+[0208/142726.101:ERROR:process_reader_win.cc(151)] SuspendThread: Access is denied. (0x5)
+[0208/142726.101:ERROR:process_reader_win.cc(123)] NtOpenThread: {Access Denied} A process has requested access to an object, but has not been granted those access rights. (0xc0000022)
+[0208/142726.101:ERROR:exception_snapshot_win.cc(98)] thread ID 16640 not found in process
+[0208/142813.071:ERROR:process_reader_win.cc(151)] SuspendThread: Access is denied. (0x5)
+[0208/142813.072:ERROR:process_reader_win.cc(123)] NtOpenThread: {Access Denied} A process has requested access to an object, but has not been granted those access rights. (0xc0000022)
+[0208/142813.072:ERROR:exception_snapshot_win.cc(98)] thread ID 15940 not found in process
