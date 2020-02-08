@@ -21,19 +21,18 @@ from dino_dqn.gym_chrome_dino2.utils.helpers import rgba2rgb
 class ChromeDinoEnv(gym.Env):
     metadata = {'render.modes': ['rgb_array'], 'video.frames_per_second': 10}
 
-    def __init__(self, render, accelerate, autoscale,images=True):
+    def __init__(self, render, accelerate, autoscale, images=True, duck=False):
         self.game = DinoGame(render, accelerate)
         self.images = images
-
-        image_size = self._observe().shape
         self.observation_space = spaces.Box(
             low=0, high=255, shape=(150, 600, 3), dtype=np.uint8
         )
-        self.action_space = spaces.Discrete(2)
+        self.action_space = spaces.Discrete(3) if duck else spaces.Discrete(2)
         self.gametime_reward = 0.1
         self.gameover_penalty = -1
         self.current_frame = self.observation_space.low
         self._action_set = [0, 1, 2]
+        self.image_size = self._observe().shape
     
     def _observe(self):
         s = self.game.get_canvas()

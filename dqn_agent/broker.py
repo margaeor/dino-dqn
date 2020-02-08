@@ -6,10 +6,10 @@ import os
 from .agent import DQNAgent
 import tensorflow as tf
 
-MODEL_NAME = 'google_new'
+MODEL_NAME = 'stat_small'
 
 # Number of training episodes
-EPISODES = 50000
+EPISODES = 20000
 
 #  Stats settings
 AGGREGATE_STATS_EVERY = 20  # episodes
@@ -27,13 +27,16 @@ class Broker:
         self.env = env
 
         # DQN Agent
-        self.agent = DQNAgent((84,84,4),self.env.action_space.n,MODEL_NAME,**kwargs)
+        #self.agent = DQNAgent((84,84,4),self.env.action_space.n,MODEL_NAME,**kwargs)
+        self.agent = DQNAgent(self.env.image_size,self.env.action_space.n,MODEL_NAME,**kwargs)
 
         # Decaying variable used for exploration-exploitation
         self.epsilon = INITIAL_EPSILON
 
         self.epsilon_values = np.linspace(INITIAL_EPSILON, MIN_EPSILON, EPISODES)
 
+        self.losses = []
+        self.accuracies = []
 
         # Episode rewards
         self.ep_rewards = []
@@ -91,7 +94,10 @@ class Broker:
 
                 # Every step we update replay memory and train main network
                 self.agent.update_replay_memory((current_state, action, reward, new_state, done))
-                self.agent.train_step(done)
+                accuracy, loss = self.agent.train_step(done)
+
+                self.accuracies.append(accuracy)
+                self.losses.append(loss)
 
                 current_state = new_state
                 step += 1
@@ -99,16 +105,20 @@ class Broker:
             # Append episode reward to a list and log stats (every given number of episodes)
             score = self.env.get_score()
             self.ep_rewards.append(score)
-            if not episode % AGGREGATE_STATS_EVERY or episode == 1:
+            if not episode % AGGREGATE_STATS_EVERY:
                 average_reward = sum(self.ep_rewards[-AGGREGATE_STATS_EVERY:])/len(self.ep_rewards[-AGGREGATE_STATS_EVERY:])
                 min_reward = min(self.ep_rewards[-AGGREGATE_STATS_EVERY:])
                 max_reward = max(self.ep_rewards[-AGGREGATE_STATS_EVERY:])
+                avg_loss = sum(self.losses[-AGGREGATE_STATS_EVERY:])/len(self.losses[-AGGREGATE_STATS_EVERY:])
+                avg_accuracy = sum(self.accuracies[-AGGREGATE_STATS_EVERY:])/len(self.accuracies[-AGGREGATE_STATS_EVERY:])
                 #self.agent.tensorboard.update_stats(reward_avg=average_reward, reward_min=min_reward, reward_max=max_reward, epsilon=self.epsilon)
                 with self.agent.logger.as_default():
                     tf.summary.scalar('avg_reward',average_reward,step=episode)
                     tf.summary.scalar('min_reward', min_reward, step=episode)
                     tf.summary.scalar('max_reward', max_reward, step=episode)
                     tf.summary.scalar('epsilon', self.epsilon, step=episode)
+                    tf.summary.scalar('loss',avg_loss, step=episode)
+                    tf.summary.scalar('accuracy', avg_accuracy, step=episode)
                     print(f"Min is {min_reward}, max is {max_reward}, avg is {average_reward}")
 
                 # Save model, but only when min reward is greater or equal a set value

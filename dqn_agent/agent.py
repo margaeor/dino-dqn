@@ -12,18 +12,18 @@ import os
 from PIL import Image
 import cv2
 
-GAMMA = 0.99 # Parameter used to discount future rewards
+GAMMA = 0.9 # Parameter used to discount future rewards
 EXPERIENCE_REPLAY_SIZE = 30000  # How many last steps to keep for model training
 MIN_EXPERIENCE_REPLAY_SIZE = 1000  # Minimum number of steps in a memory to start training
-LEARNING_RATE = 0.001 # Adam optimizer learning rate
-MINIBATCH_SIZE = 32  # Size of training batch
-UPDATE_TARGET_EVERY = 20  # Update target every 5 episodes
+LEARNING_RATE = 0.0001 # Adam optimizer learning rate
+MINIBATCH_SIZE = 64  # Size of training batch
+UPDATE_TARGET_EVERY = 5  # Update target every 5 episodes
 GPU_MEMORY_LIMIT = 3000 # Defines fraction of GPU memory used by tf
 
 
 
 class DQNAgent:
-    def __init__(self, input_size, output_size, model_name, load_data=False):
+    def __init__(self, input_size, output_size, model_name, load_data=False, use_images=True):
 
         self.MODEL_NAME = model_name
 
@@ -32,6 +32,7 @@ class DQNAgent:
         # output_size corresponds to the number of actions
         self.input_size = input_size
         self.output_size = output_size
+        self.use_images = use_images
 
         self.limit_gpu_usage(GPU_MEMORY_LIMIT)
 
@@ -45,7 +46,9 @@ class DQNAgent:
         self.target_model = self.create_model()
         self.target_model.set_weights(self.policy_model.get_weights())
 
-        #self.restore_model(os.path.join('models','google_16__4900____52.00max___44.00avg___42.00min__1581091383'))
+
+
+        #self.restore_model(os.path.join('models','stat_net__200___126.00max___65.10avg___42.00min__1581186006'))
         self.starting_episode = 1
 
 
@@ -113,25 +116,40 @@ class DQNAgent:
 
     def create_model(self):
         input_size = self.input_size
-        model = keras.models.Sequential([
-            keras.layers.Conv2D(32, (8, 8), strides=(4, 4), padding='same',input_shape=input_size),
-            keras.layers.Activation('relu'),
-            keras.layers.Conv2D(64, (4, 4), strides=(2, 2), padding='same'),
-            keras.layers.Activation('relu'),
-            keras.layers.Conv2D(64, (3, 3), strides=(1, 1), padding='same'),
-            # keras.layers.MaxPooling2D(pool_size=(2, 2)),
-            # keras.layers.Dropout(0.2),
-            keras.layers.Flatten(),
-            keras.layers.Dense(512),
-            keras.layers.Activation('relu'),
-            keras.layers.Dense(self.output_size, activation='linear')
-        ])
+
+        if self.use_images:
+            model = keras.models.Sequential([
+                keras.layers.Conv2D(32, (8, 8), strides=(4, 4), padding='same',input_shape=input_size),
+                keras.layers.Activation('relu'),
+                keras.layers.Conv2D(64, (4, 4), strides=(2, 2), padding='same'),
+                keras.layers.Activation('relu'),
+                keras.layers.Conv2D(64, (3, 3), strides=(1, 1), padding='same'),
+                # keras.layers.MaxPooling2D(pool_size=(2, 2)),
+                # keras.layers.Dropout(0.2),
+                keras.layers.Flatten(),
+                keras.layers.Dense(512),
+                keras.layers.Activation('relu'),
+                keras.layers.Dense(self.output_size, activation='linear')
+            ])
+
+        else:
+            model = keras.models.Sequential([
+                keras.layers.Dense(32, input_shape=input_size),
+                keras.layers.Activation('relu'),
+                keras.layers.Dense(64, input_shape=input_size),
+                keras.layers.Activation('relu'),
+                keras.layers.Dense(64, input_shape=input_size),
+                keras.layers.Activation('relu'),
+                keras.layers.Dense(32),
+                keras.layers.Activation('relu'),
+                keras.layers.Dense(self.output_size, activation='linear')
+            ])
 
         #run_opts = tf.RunOptions(report_tensor_allocations_upon_oom=True)
 
         model.compile(optimizer=keras.optimizers.Adam(lr=LEARNING_RATE),
                       loss='mse',
-                      metrics=['accuracy'])
+                      metrics=['accuracy','mse'])
         return model
 
 
@@ -146,7 +164,7 @@ class DQNAgent:
 
         # Start training only if certain number of samples is already saved
         if len(self.replay_memory) < MIN_EXPERIENCE_REPLAY_SIZE:
-            return
+            return 1,0
 
         # Get a minibatch of random samples from experience replay table
         minibatch = random.sample(self.replay_memory, MINIBATCH_SIZE)
@@ -185,7 +203,7 @@ class DQNAgent:
         # Fit on all samples as one batch, log only on terminal state
         tf_X = tf.cast(np.array(X),tf.float16)
         tf_y = tf.cast(np.array(y), tf.float16)
-        self.policy_model.train_on_batch(tf_X, tf_y)
+        metrics = self.policy_model.train_on_batch(tf_X, tf_y)
 
         # Update target network counter every episode
         if terminal_state:
@@ -196,6 +214,7 @@ class DQNAgent:
             self.target_model.set_weights(self.policy_model.get_weights())
             self.target_update_counter = 0
 
+        return metrics[1],metrics[1]
 
     # Pickle data to file
     def pickle_data(self,file,data):

@@ -14,10 +14,10 @@ def do_train(brok):
 
 if __name__=="__main__":
 
-    env = gym.make('ChromeDino-v0')
+    env = gym.make('ChromeDino-v0',images=False,accelerate=True)
     #env = gym.make('ChromeDinoNoBrowser-v0')
-    env = make_dino(env, timer=True, frame_stack=True)
-    broker_obj = broker.Broker(env)
+    #env = make_dino(env, timer=True, frame_stack=True)
+    broker_obj = broker.Broker(env,use_images=False)
 
     do_train(broker_obj)
     #broker_obj.train()
