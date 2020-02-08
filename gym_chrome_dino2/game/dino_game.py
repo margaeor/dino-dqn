@@ -11,6 +11,48 @@ from selenium.webdriver.common.keys import Keys
 
 from dino_dqn.gym_chrome_dino2.utils.helpers import download_chromedriver
 
+javascript_stats_func = '''
+
+function (runner) {
+	
+	var inst = Runner.instance_;
+	
+	var obstacles = inst.horizon.obstacles;
+	var MAX_DISTANCE = 600;
+	var MAX_GAP_SIZE = 600;
+	
+	var result = {
+		'dist_to_obj':MAX_DISTANCE,
+		'gap_size':MAX_GAP_SIZE,
+		'obj_height':30,
+		'bird_height':0,//Max 100
+		'speed':6,
+		'dino_y':96
+	}
+	if(obstacles.length>0) {
+		result['dist_to_obj'] = inst.horizon.obstacles[0].xPos-inst.tRex.xPos-25;
+	
+        if(obstacles[0].typeConfig.type === "PTERODACTYL") {
+            result['bird_height'] = obstacles[0].yPos;
+        }
+	}
+	if(obstacles.length >=2) {
+		result['gap_size'] = Math.abs(inst.horizon.obstacles[0].xPos-inst.horizon.obstacles[1].xPos);
+	}
+	
+	result['dino_y'] = inst.tRex.yPos;
+	result['speed'] = inst.currentSpeed;
+	
+	//Normalize values
+	result.dist_to_obj /= MAX_DISTANCE;
+	result.gap_size /= MAX_GAP_SIZE;
+	result.bird_height /= 120;
+	result.speed /= 20;
+	result.dino_y /= 100;
+	
+	return result;
+}'''
+
 class DinoGame():
     def __init__(self, render=False, accelerate=False, autoscale=False):
         if not os.path.exists('chromedriver') and not os.path.exists('chromedriver.exe'):
@@ -27,10 +69,13 @@ class DinoGame():
         # self.driver.get('chrome://dino')
         self.driver.get('https://elvisyjlin.github.io/t-rex-runner/')
         self.defaults = self.get_parameters()  # default parameters
-        if not accelerate:
-            self.set_parameter('config.ACCELERATION', 0)
+        # if not accelerate:
+        #     self.set_parameter('config.ACCELERATION', 0)
         if not autoscale:
             self.driver.execute_script('Runner.instance_.setArcadeModeContainerScale = function(){};')
+
+        self.driver.execute_script("window.getStats = {}".format(javascript_stats_func))
+
         self.press_space()
         
     def get_parameters(self):
@@ -74,7 +119,11 @@ class DinoGame():
     def get_score(self):
         digits = self.driver.execute_script('return Runner.instance_.distanceMeter.digits;');
         return int(''.join(digits))
-    
+
+    def get_all_stats(self):
+
+        return self.driver.execute_script('return getStats(Runner);')
+
     def get_canvas(self):
         return self.driver.execute_script('return document.getElementsByClassName("runner-canvas")[0].toDataURL().substring(22);')
     

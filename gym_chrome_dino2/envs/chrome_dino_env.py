@@ -21,8 +21,10 @@ from dino_dqn.gym_chrome_dino2.utils.helpers import rgba2rgb
 class ChromeDinoEnv(gym.Env):
     metadata = {'render.modes': ['rgb_array'], 'video.frames_per_second': 10}
 
-    def __init__(self, render, accelerate, autoscale):
+    def __init__(self, render, accelerate, autoscale,images=True):
         self.game = DinoGame(render, accelerate)
+        self.images = images
+
         image_size = self._observe().shape
         self.observation_space = spaces.Box(
             low=0, high=255, shape=(150, 600, 3), dtype=np.uint8
@@ -40,8 +42,17 @@ class ChromeDinoEnv(gym.Env):
         i = rgba2rgb(i)
         a = np.array(i)
         self.current_frame = a
-        return self.current_frame
-    
+
+        if not self.images:
+            stats = self.game.get_all_stats()
+            self.cur_stats = stats
+            self.cur_features = np.array([stats['dino_y'],stats['dist_to_obj'],stats['gap_size'],stats['bird_height'],stats['speed']])
+            return self.cur_features
+        else:
+            return self.current_frame
+
+
+
     def step(self, action):
         if action == 1:
             self.game.press_up()
@@ -49,13 +60,17 @@ class ChromeDinoEnv(gym.Env):
             self.game.press_down()
         if action == 3:
             self.game.press_space()
+
         observation = self._observe()
+
         reward = self.gametime_reward
+
         done = False
         info = {}
         if self.game.is_crashed():
             reward = self.gameover_penalty
             done = True
+
         return observation, reward, done, info
     
     def reset(self, record=False):
