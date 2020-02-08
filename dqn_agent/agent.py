@@ -17,8 +17,8 @@ EXPERIENCE_REPLAY_SIZE = 30000  # How many last steps to keep for model training
 MIN_EXPERIENCE_REPLAY_SIZE = 1000  # Minimum number of steps in a memory to start training
 LEARNING_RATE = 0.001 # Adam optimizer learning rate
 MINIBATCH_SIZE = 32  # Size of training batch
-UPDATE_TARGET_EVERY = 5  # Update target every 5 episodes
-GPU_MEMORY_LIMIT = 4096 # Defines fraction of GPU memory used by tf
+UPDATE_TARGET_EVERY = 20  # Update target every 5 episodes
+GPU_MEMORY_LIMIT = 3000 # Defines fraction of GPU memory used by tf
 
 
 
@@ -33,28 +33,26 @@ class DQNAgent:
         self.input_size = input_size
         self.output_size = output_size
 
-        #self.limit_gpu_usage(GPU_MEMORY_LIMIT)
+        self.limit_gpu_usage(GPU_MEMORY_LIMIT)
 
         # Our main DQN model
         self.policy_model = self.create_model()
 
-
+        # An array with last n steps for training
+        self.replay_memory = deque(maxlen=EXPERIENCE_REPLAY_SIZE)
 
         # Target network used for smoother training
         self.target_model = self.create_model()
         self.target_model.set_weights(self.policy_model.get_weights())
 
-        self.restore_model(os.path.join('google_16__800____69.00max___55.00avg___42.00min__1581012579'))
-        self.starting_episode = 801
+        #self.restore_model(os.path.join('models','google_16__4900____52.00max___44.00avg___42.00min__1581091383'))
+        self.starting_episode = 1
 
 
         # Configure paths
         self.log_dir = os.path.join("logs","{}-{}-{}".format(self.MODEL_NAME,self.starting_episode, int(time.time())))
         self.checkpoint_path = os.path.join("checkpoints/","{}.ckpt".format(self.MODEL_NAME))
 
-
-        # An array with last n steps for training
-        self.replay_memory = deque(maxlen=EXPERIENCE_REPLAY_SIZE)
 
         # Tensorboard object to keep logs and images
         self.tensorboard = keras.callbacks.TensorBoard(
@@ -109,8 +107,8 @@ class DQNAgent:
             if replay_mem:
                 self.replay_memory = replay_mem
 
-        except Exception:
-            print("Could not load weights")
+        except Exception as e:
+            print("Could not load weights ",str(e))
 
 
     def create_model(self):
@@ -156,12 +154,12 @@ class DQNAgent:
         # Get current states from minibatch, then query policy network
         # for Q values
         current_states = tf.cast(np.array([entry[0] for entry in minibatch]),tf.float16)
-        current_qs_list = self.policy_model.predict(current_states)
+        current_qs_list = np.array(self.policy_model.predict_on_batch(current_states))
 
         # Get future states from minibatch, then query target model for Q values
         # for future Q values
         future_states = tf.cast(np.array([entry[3] for entry in minibatch]),tf.float16)
-        future_qs_list = self.target_model.predict(future_states)
+        future_qs_list = np.array(self.target_model.predict_on_batch(future_states))
 
         X = []
         y = []
@@ -187,8 +185,7 @@ class DQNAgent:
         # Fit on all samples as one batch, log only on terminal state
         tf_X = tf.cast(np.array(X),tf.float16)
         tf_y = tf.cast(np.array(y), tf.float16)
-        self.policy_model.fit(tf_X, tf_y, batch_size=MINIBATCH_SIZE, verbose=0, shuffle=False,
-                              callbacks=[] if terminal_state else [])
+        self.policy_model.train_on_batch(tf_X, tf_y)
 
         # Update target network counter every episode
         if terminal_state:
@@ -202,25 +199,34 @@ class DQNAgent:
 
     # Pickle data to file
     def pickle_data(self,file,data):
-        with open(file, 'wb') as f:
-            # Pickle the metadata file.
-            pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
 
+        try:
+            with open(file, 'wb') as f:
+                # Pickle the metadata file.
+                pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
+
+        except Exception:
+            print("Error writing pickle")
 
     # Unpickle data from file
     def unpickle_data(self, file):
 
-        if os.path.isfile(file) and os.path.isfile(file):
-            try:
-                data = pickle.load(file)
-                return data
-            except Exception:
+        try:
+            if os.path.isfile(file):
+                with open(file, 'rb') as pickle_file:
+                    data = pickle.load(pickle_file)
+                    return data
+            else:
                 return None
+
+        except Exception:
+            print("No pickle found")
+            return None
 
 
 
     # Queries main network for Q values given current observation space (environment state)
     def get_qs(self, state):
         input = tf.cast(np.array(state).reshape(-1, *state.shape),tf.float16)
-        return self.policy_model.predict(input)[0]
+        return np.array(self.policy_model.predict_on_batch(input))[0]
 

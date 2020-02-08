@@ -6,18 +6,18 @@ import os
 from .agent import DQNAgent
 import tensorflow as tf
 
-MODEL_NAME = 'google_16'
+MODEL_NAME = 'google_new'
 
 # Number of training episodes
 EPISODES = 50000
 
 #  Stats settings
-AGGREGATE_STATS_EVERY = 5  # episodes
+AGGREGATE_STATS_EVERY = 20  # episodes
 SHOW_PREVIEW = False
-MIN_REWARD = 90  # Minimum score required to save the model
+MIN_REWARD = 100  # Minimum score required to save the model
 MIN_EPSILON = 0.001
 INITIAL_EPSILON = 0.1
-SAVE_MODEL_EVERY = 100
+SAVE_MODEL_EVERY = 200
 
 class Broker:
 
