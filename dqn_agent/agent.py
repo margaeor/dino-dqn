@@ -18,7 +18,7 @@ MIN_EXPERIENCE_REPLAY_SIZE = 1000  # Minimum number of steps in a memory to star
 LEARNING_RATE = 0.0001 # Adam optimizer learning rate
 MINIBATCH_SIZE = 64  # Size of training batch
 UPDATE_TARGET_EVERY = 5  # Update target every 5 episodes
-GPU_MEMORY_LIMIT = 3000 # Defines fraction of GPU memory used by tf
+GPU_MEMORY_LIMIT = 2000 # Defines fraction of GPU memory used by tf
 
 
 
@@ -48,7 +48,7 @@ class DQNAgent:
 
 
 
-        #self.restore_model(os.path.join('models','stat_net__200___126.00max___65.10avg___42.00min__1581186006'))
+        #self.restore_model(os.path.join('models','stat_small__1800___109.00max___56.35avg___43.00min__1581208623'))
         self.starting_episode = 1
 
 

@@ -52,7 +52,7 @@ class ChromeDinoEnv(gym.Env):
 
 
 
-    def step(self, action):
+    def step(self, action, observe=True):
         if action == 1:
             self.game.press_up()
         if action == 2:
@@ -60,7 +60,9 @@ class ChromeDinoEnv(gym.Env):
         if action == 3:
             self.game.press_space()
 
-        observation = self._observe()
+        observation = None
+        if observe:
+            observation = self._observe()
 
         reward = self.gametime_reward
 
