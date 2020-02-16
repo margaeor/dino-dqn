@@ -6,7 +6,7 @@ import os
 from .agent import DQNAgent
 import tensorflow as tf
 
-MODEL_NAME = 'stat_small'
+MODEL_NAME = 'google_sduck'
 
 # Number of training episodes
 EPISODES = 20000
@@ -27,8 +27,8 @@ class Broker:
         self.env = env
 
         # DQN Agent
-        #self.agent = DQNAgent((84,84,4),self.env.action_space.n,MODEL_NAME,**kwargs)
-        self.agent = DQNAgent(self.env.image_size,self.env.action_space.n,MODEL_NAME,**kwargs)
+        self.agent = DQNAgent((84,84,4),self.env.action_space.n,MODEL_NAME,**kwargs)
+        #self.agent = DQNAgent(self.env.image_size,self.env.action_space.n,MODEL_NAME,**kwargs)
 
         # Decaying variable used for exploration-exploitation
         self.epsilon = INITIAL_EPSILON
@@ -69,6 +69,9 @@ class Broker:
 
             # Reset environment and get initial state
             current_state = np.array(self.env.reset())
+
+            if episode == 1:
+                print(current_state.shape)
 
             # Reset flag and start iterating until episode ends
             done = False
@@ -112,19 +115,20 @@ class Broker:
                 avg_loss = sum(self.losses[-AGGREGATE_STATS_EVERY:])/len(self.losses[-AGGREGATE_STATS_EVERY:])
                 avg_accuracy = sum(self.accuracies[-AGGREGATE_STATS_EVERY:])/len(self.accuracies[-AGGREGATE_STATS_EVERY:])
                 #self.agent.tensorboard.update_stats(reward_avg=average_reward, reward_min=min_reward, reward_max=max_reward, epsilon=self.epsilon)
-                with self.agent.logger.as_default():
-                    tf.summary.scalar('avg_reward',average_reward,step=episode)
-                    tf.summary.scalar('min_reward', min_reward, step=episode)
-                    tf.summary.scalar('max_reward', max_reward, step=episode)
-                    tf.summary.scalar('epsilon', self.epsilon, step=episode)
-                    tf.summary.scalar('loss',avg_loss, step=episode)
-                    tf.summary.scalar('accuracy', avg_accuracy, step=episode)
-                    print(f"Min is {min_reward}, max is {max_reward}, avg is {average_reward}")
+                if self.agent.logger:
+                    with self.agent.logger.as_default():
+                        tf.summary.scalar('avg_reward',average_reward,step=episode)
+                        tf.summary.scalar('min_reward', min_reward, step=episode)
+                        tf.summary.scalar('max_reward', max_reward, step=episode)
+                        tf.summary.scalar('epsilon', self.epsilon, step=episode)
+                        tf.summary.scalar('loss',avg_loss, step=episode)
+                        tf.summary.scalar('accuracy', avg_accuracy, step=episode)
+                        print(f"Min is {min_reward}, max is {max_reward}, avg is {average_reward}")
 
                 # Save model, but only when min reward is greater or equal a set value
                 if min_reward >= MIN_REWARD or (episode % SAVE_MODEL_EVERY == 0):
                     #self.agent.policy_model.save(f'./models/{MODEL_NAME}__{max_reward:_>7.2f}max_{average_reward:_>7.2f}avg_{min_reward:_>7.2f}min__{int(time.time())}')
-                    model_path = os.path.join('models',f'{MODEL_NAME}__{episode}__{max_reward:_>7.2f}max_{average_reward:_>7.2f}avg_{min_reward:_>7.2f}min__{int(time.time())}')
+                    model_path = os.path.join('models',f'{MODEL_NAME}__{episode}__{max_reward:_>7.2f}max_{average_reward:_>7.2f}avg__{int(time.time())}')
                     self.agent.policy_model.save(model_path)
                     self.agent.pickle_data(os.path.join(model_path,'replay_mem.pickle'),self.agent.replay_memory)
 

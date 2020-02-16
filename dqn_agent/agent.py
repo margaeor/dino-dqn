@@ -23,7 +23,7 @@ GPU_MEMORY_LIMIT = 2000 # Defines fraction of GPU memory used by tf
 
 
 class DQNAgent:
-    def __init__(self, input_size, output_size, model_name, load_data=False, use_images=True):
+    def __init__(self, input_size, output_size, model_name, load_data=False, use_images=True, log_data=True):
 
         self.MODEL_NAME = model_name
 
@@ -33,6 +33,7 @@ class DQNAgent:
         self.input_size = input_size
         self.output_size = output_size
         self.use_images = use_images
+        self.log_data = log_data
 
         self.limit_gpu_usage(GPU_MEMORY_LIMIT)
 
@@ -48,7 +49,7 @@ class DQNAgent:
 
 
 
-        #self.restore_model(os.path.join('models','stat_small__1800___109.00max___56.35avg___43.00min__1581208623'))
+        #self.restore_model(os.path.join('models','google_sduck__1000___166.00max___80.90avg___43.00min__1581258115'))
         self.starting_episode = 1
 
 
@@ -58,12 +59,15 @@ class DQNAgent:
 
 
         # Tensorboard object to keep logs and images
-        self.tensorboard = keras.callbacks.TensorBoard(
-            log_dir=self.log_dir,
-            update_freq='epoch'
-        )
+        # self.tensorboard = keras.callbacks.TensorBoard(
+        #     log_dir=self.log_dir,
+        #     update_freq='epoch'
+        # )
 
-        self.logger = tf.summary.create_file_writer(self.log_dir)
+        if self.log_data:
+            self.logger = tf.summary.create_file_writer(self.log_dir)
+        else:
+            self.logger = None
 
         # Checkpoint object used to save and retrieve our model upon request
         self.cp_callback = keras.callbacks.ModelCheckpoint(

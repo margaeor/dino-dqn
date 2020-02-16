@@ -41,7 +41,7 @@ class VideoMaker:
 
         # DQN Agent
         #self.agent = DQNAgent((84,84,4),self.env.action_space.n,MODEL_NAME,**kwargs)
-        self.agent = DQNAgent((84,84,4),self.env.action_space.n,model,**kwargs)
+        self.agent = DQNAgent((84,84,4),self.env.action_space.n,model,log_data=False,**kwargs)
         self.find_model_path()
 
         if episode != 0:
@@ -62,6 +62,7 @@ class VideoMaker:
 
         if result:
             self.model_path = os.path.join('models',result[0])
+            print(f"Will load model {self.model_path}")
 
         else:
             self.model_path = None
@@ -131,7 +132,7 @@ class VideoMaker:
         while counter < self.copies:
 
             # Update tensorboard step every episode
-            self.agent.tensorboard.step = episode
+            #self.agent.tensorboard.step = episode
 
             # Restarting episode - reset episode reward and step number
             episode_reward = 0
@@ -154,6 +155,7 @@ class VideoMaker:
 
                 new_state, reward, self.done, info = self.env.step(action)
 
+                sleep(0.0314)
                 new_state = np.array(new_state)
 
                 # Transform new continous state to new discrete state and count reward
@@ -182,24 +184,33 @@ class VideoMaker:
 
 if __name__=="__main__":
 
-    env = gym.make('ChromeDino-v0')
+    env = gym.make('ChromeDino-v0',images=True,accelerate=True,duck=True)
     #env = gym.make('ChromeDinoNoBrowser-v0')
-    env = make_dino(env, timer=True, frame_stack=True)
+    env = make_dino(env, timer=True, frame_stack=True,warp=True)
     #broker_obj = broker.Broker(env,use_images=False)
 
     result = []
     reg_compile = re.compile("")
-    model_name = 'google_new'
+    # model_name = 'google_new'
+    #
+    # episodes = [0,200,400,1200,600]
+    # min_rewards = [40,50,80,200,400]
+    # max_rewards = [50,80,300,1000,1000]
+    # copies = [2,2,2,2,2]
+    # mask = [0,0,0,0,1]
 
-    episodes = [0,200,400,1200,600]
-    min_rewards = [40,50,80,200,400]
-    max_rewards = [50,80,300,1000,1000]
-    copies = [2,2,2,2,2]
-    mask = [0,0,0,0,1]
+    model_name = 'google_sduck'
+
+    episodes = [0,200,600,1400,2400,8200]
+    min_rewards = [40,50,100,200,350,600]
+    max_rewards = [50,80,200,300,500,1000]
+    copies = [2,2,2,2,2,2]
+    mask = [0,0,0,0,0,1]
 
     for i,(episode,rew,cop,max_rew) in enumerate(zip(episodes,min_rewards,copies,max_rewards)):
         if mask[i] == 1:
             maker = VideoMaker(env,model_name,episode,rew,max_rew,cop)
+            print(f"Attempting {cop} vids between {rew} and {max_rew} for episode {episode}")
             maker.make()
             print(f"Video for episode {episode} ready")
         #break

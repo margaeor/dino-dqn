@@ -50,8 +50,8 @@ class TimerEnv(gym.Wrapper):
 
 def make_dino(env, timer=True, frame_stack=True,warp=True):
 
-    if warp:
-        env = WarpFrame(env, 84, 84)
+    env = WarpFrame(env, 84, 84)
+
     if timer:
         env = TimerEnv(env)
     if frame_stack:
