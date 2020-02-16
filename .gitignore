@@ -5,3 +5,4 @@ checkpoints/
 __pycache__
 videos/
 video_writer.py
+chromedriver.exe
