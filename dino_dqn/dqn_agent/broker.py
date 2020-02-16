@@ -6,7 +6,7 @@ import os
 from .agent import DQNAgent
 import tensorflow as tf
 
-MODEL_NAME = 'google_sduck'
+MODEL_NAME = 'new_model'
 
 # Number of training episodes
 EPISODES = 20000
@@ -60,8 +60,6 @@ class Broker:
         # Iterate over episodes
         for episode in tqdm(range(self.agent.starting_episode, EPISODES + 1), ascii=True, unit='episodes'):
 
-            # Update tensorboard step every episode
-            self.agent.tensorboard.step = episode
 
             # Restarting episode - reset episode reward and step number
             episode_reward = 0

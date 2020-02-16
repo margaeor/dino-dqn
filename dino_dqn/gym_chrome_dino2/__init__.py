@@ -3,8 +3,9 @@
 #
 # Copyright (C) 2018 Elvis Yu-Jing Lin <elvisyjlin@gmail.com>
 # Licensed under the MIT License - https://opensource.org/licenses/MIT
-import gym
+import gym,sys,os
 from gym.envs.registration import register
+
 
 if 'ChromeDino-v0' not in gym.envs.registry.env_specs:
     register(

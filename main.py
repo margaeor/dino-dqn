@@ -4,6 +4,10 @@ import sys
 import gym
 import cv2
 import numpy as np
+import os
+import sys
+
+
 import dino_dqn.gym_chrome_dino2
 from dino_dqn.gym_chrome_dino2.utils.wrappers import make_dino
 from dino_dqn.dqn_agent import broker

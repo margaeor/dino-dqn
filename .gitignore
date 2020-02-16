@@ -6,3 +6,4 @@ __pycache__
 videos/
 video_writer.py
 chromedriver.exe
+*.backup.zip
