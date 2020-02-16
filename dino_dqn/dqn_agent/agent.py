@@ -13,8 +13,8 @@ from PIL import Image
 import cv2
 
 GAMMA = 0.9 # Parameter used to discount future rewards
-EXPERIENCE_REPLAY_SIZE = 30000  # How many last steps to keep for model training
-MIN_EXPERIENCE_REPLAY_SIZE = 1000  # Minimum number of steps in a memory to start training
+EXPERIENCE_REPLAY_SIZE = 30000  # Size of the replay memory
+MIN_EXPERIENCE_REPLAY_SIZE = 1000  # Minimum number of steps in replay memory to start training
 LEARNING_RATE = 0.0001 # Adam optimizer learning rate
 MINIBATCH_SIZE = 64  # Size of training batch
 UPDATE_TARGET_EVERY = 5  # Update target every 5 episodes
@@ -23,7 +23,7 @@ GPU_MEMORY_LIMIT = 2000 # Defines fraction of GPU memory used by tf
 
 
 class DQNAgent:
-    def __init__(self, input_size, output_size, model_name, load_data=False, use_images=True, log_data=True):
+    def __init__(self, input_size, output_size, model_name, model_path=None, starting_episode=1, use_images=True, log_data=True):
 
         self.MODEL_NAME = model_name
 
@@ -35,6 +35,7 @@ class DQNAgent:
         self.use_images = use_images
         self.log_data = log_data
 
+        # Limit GPU memory usage
         self.limit_gpu_usage(GPU_MEMORY_LIMIT)
 
         # Our main DQN model
@@ -47,48 +48,35 @@ class DQNAgent:
         self.target_model = self.create_model()
         self.target_model.set_weights(self.policy_model.get_weights())
 
+        # If we got a valid model path, then restore the model
+        if model_path:
+            self.restore_model(model_path)
 
-
-        #self.restore_model(os.path.join('models','google_sduck__1000___166.00max___80.90avg___43.00min__1581258115'))
-        self.starting_episode = 1
+        # Id of the starting episode.
+        # In most cases it is 1, except for when we need to resume training
+        # from a checkpoint
+        self.starting_episode = starting_episode
 
 
         # Configure paths
         self.log_dir = os.path.join("logs","{}-{}-{}".format(self.MODEL_NAME,self.starting_episode, int(time.time())))
-        self.checkpoint_path = os.path.join("checkpoints/","{}.ckpt".format(self.MODEL_NAME))
-
-
-        # Tensorboard object to keep logs and images
-        # self.tensorboard = keras.callbacks.TensorBoard(
-        #     log_dir=self.log_dir,
-        #     update_freq='epoch'
-        # )
 
         if self.log_data:
             self.logger = tf.summary.create_file_writer(self.log_dir)
         else:
             self.logger = None
 
-        # Checkpoint object used to save and retrieve our model upon request
-        self.cp_callback = keras.callbacks.ModelCheckpoint(
-            filepath=self.checkpoint_path,
-            save_weights_only=True,
-            verbose=1
-        )
 
         # Used to count when to update target network with main network's weights
         self.target_update_counter = 0
 
 
-
-        if load_data:
-            self.restore_model()
-
+    # Used to define the fraction of GPU memory used by TF.
+    # Useful when we want to run multiple models in GPU
     def limit_gpu_usage(self,memory_limit):
 
         gpus = tf.config.experimental.list_physical_devices('GPU')
         if gpus:
-            # Restrict TensorFlow to only allocate 1GB of memory on the first GPU
             try:
                 tf.config.experimental.set_virtual_device_configuration(
                     gpus[0],
@@ -99,25 +87,31 @@ class DQNAgent:
                 # Virtual devices must be set before GPUs have been initialized
                 print(e)
 
-
-    def restore_model(self,path=None):
-
-        if path == None:
-            path = self.checkpoint_path
+    # Restore model from path.
+    # The path given is the DIRECTORY that contains saved_model.pb
+    def restore_model(self,path):
 
         try:
             self.policy_model = keras.models.load_model(path)
-            #self.policy_model.load_weights(path)
             self.target_model.set_weights(self.policy_model.get_weights())
+
+        except Exception as e:
+            print("Could not load model weights. ",str(e))
+
+        try:
             replay_mem = self.unpickle_data(os.path.join(path,'replay_mem.pickle'))
 
             if replay_mem:
                 self.replay_memory = replay_mem
 
         except Exception as e:
-            print("Could not load weights ",str(e))
+            print("Could not load replay memory pickle from file.\nContinuing with empty replay memory ",str(e))
 
-
+    # Create the DQN model. There are 2 model structures:
+    # 1) Model that takes as input images (self.use_images=True).
+    #    This model is used by default
+    # 2) Model that takes as input a vector of features (self.use_images=False)
+    #    (e.g. distance to closest obstacle, dino height, acceleration)
     def create_model(self):
         input_size = self.input_size
 
@@ -128,8 +122,6 @@ class DQNAgent:
                 keras.layers.Conv2D(64, (4, 4), strides=(2, 2), padding='same'),
                 keras.layers.Activation('relu'),
                 keras.layers.Conv2D(64, (3, 3), strides=(1, 1), padding='same'),
-                # keras.layers.MaxPooling2D(pool_size=(2, 2)),
-                # keras.layers.Dropout(0.2),
                 keras.layers.Flatten(),
                 keras.layers.Dense(512),
                 keras.layers.Activation('relu'),
@@ -149,8 +141,6 @@ class DQNAgent:
                 keras.layers.Dense(self.output_size, activation='linear')
             ])
 
-        #run_opts = tf.RunOptions(report_tensor_allocations_upon_oom=True)
-
         model.compile(optimizer=keras.optimizers.Adam(lr=LEARNING_RATE),
                       loss='mse',
                       metrics=['accuracy','mse'])
@@ -163,7 +153,8 @@ class DQNAgent:
         self.replay_memory.append(transition)
 
 
-    # Trains main network every step during episode
+    # Performs a training step on the policy model
+    # Returns (accuracy,loss)
     def train_step(self, terminal_state):
 
         # Start training only if certain number of samples is already saved
@@ -218,7 +209,7 @@ class DQNAgent:
             self.target_model.set_weights(self.policy_model.get_weights())
             self.target_update_counter = 0
 
-        return metrics[1],metrics[1]
+        return metrics[0],metrics[1]
 
     # Pickle data to file
     def pickle_data(self,file,data):
@@ -248,7 +239,7 @@ class DQNAgent:
 
 
 
-    # Queries main network for Q values given current observation space (environment state)
+    # Queries main network for Q values given current observation (environment state)
     def get_qs(self, state):
         input = tf.cast(np.array(state).reshape(-1, *state.shape),tf.float16)
         return np.array(self.policy_model.predict_on_batch(input))[0]

@@ -1,2 +1,20 @@
 [0216/211511.601:ERROR:process_reader_win.cc(123)] NtOpenThread: {Access Denied} A process has requested access to an object, but has not been granted those access rights. (0xc0000022)
 [0216/211511.602:ERROR:exception_snapshot_win.cc(98)] thread ID 18544 not found in process
+[0216/212218.063:ERROR:process_reader_win.cc(151)] SuspendThread: Access is denied. (0x5)
+[0216/212218.066:ERROR:process_reader_win.cc(123)] NtOpenThread: {Access Denied} A process has requested access to an object, but has not been granted those access rights. (0xc0000022)
+[0216/212218.067:ERROR:exception_snapshot_win.cc(98)] thread ID 19020 not found in process
+[0216/212218.070:ERROR:process_reader_win.cc(151)] SuspendThread: Access is denied. (0x5)
+[0216/212218.072:ERROR:process_reader_win.cc(151)] SuspendThread: Access is denied. (0x5)
+[0216/212218.072:ERROR:process_reader_win.cc(151)] SuspendThread: Access is denied. (0x5)
+[0216/212218.072:ERROR:process_reader_win.cc(151)] SuspendThread: Access is denied. (0x5)
+[0216/212218.072:ERROR:process_reader_win.cc(151)] SuspendThread: Access is denied. (0x5)
+[0216/212218.072:ERROR:process_reader_win.cc(151)] SuspendThread: Access is denied. (0x5)
+[0216/212218.072:ERROR:process_reader_win.cc(151)] SuspendThread: Access is denied. (0x5)
+[0216/212218.072:ERROR:process_reader_win.cc(151)] SuspendThread: Access is denied. (0x5)
+[0216/212218.072:ERROR:process_reader_win.cc(151)] SuspendThread: Access is denied. (0x5)
+[0216/212218.072:ERROR:process_reader_win.cc(151)] SuspendThread: Access is denied. (0x5)
+[0216/212218.072:ERROR:process_reader_win.cc(151)] SuspendThread: Access is denied. (0x5)
+[0216/212218.072:ERROR:process_reader_win.cc(151)] SuspendThread: Access is denied. (0x5)
+[0216/212218.072:ERROR:process_reader_win.cc(151)] SuspendThread: Access is denied. (0x5)
+[0216/212218.072:ERROR:process_reader_win.cc(123)] NtOpenThread: {Access Denied} A process has requested access to an object, but has not been granted those access rights. (0xc0000022)
+[0216/212218.072:ERROR:exception_snapshot_win.cc(98)] thread ID 17616 not found in process
