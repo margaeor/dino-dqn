@@ -27,7 +27,9 @@ class ChromeDinoEnv(gym.Env):
         self.observation_space = spaces.Box(
             low=0, high=255, shape=(150, 600, 3), dtype=np.uint8
         )
-        self.observation_shape = (84,84,4)
+
+        self.stat_list = ['dino_y','dist_to_obj','gap_size','bird_height','speed']
+        self.observation_shape = (84, 84, 4) if images else (len(self.stat_list),)
         self.action_space = spaces.Discrete(3) if duck else spaces.Discrete(2)
         self.gametime_reward = 0.1
         self.gameover_penalty = -1
@@ -46,7 +48,7 @@ class ChromeDinoEnv(gym.Env):
         if not self.images:
             stats = self.game.get_all_stats()
             self.cur_stats = stats
-            self.cur_features = np.array([stats['dino_y'],stats['dist_to_obj'],stats['gap_size'],stats['bird_height'],stats['speed']])
+            self.cur_features = np.array([stats[key] for key in self.stat_list])
             return self.cur_features
         else:
             return self.current_frame

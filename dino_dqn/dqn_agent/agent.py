@@ -132,9 +132,9 @@ class DQNAgent:
             model = keras.models.Sequential([
                 keras.layers.Dense(32, input_shape=input_size),
                 keras.layers.Activation('relu'),
-                keras.layers.Dense(64, input_shape=input_size),
+                keras.layers.Dense(64),
                 keras.layers.Activation('relu'),
-                keras.layers.Dense(64, input_shape=input_size),
+                keras.layers.Dense(64),
                 keras.layers.Activation('relu'),
                 keras.layers.Dense(32),
                 keras.layers.Activation('relu'),

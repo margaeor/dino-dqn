@@ -5,32 +5,44 @@ import cv2.cv2 as cv2
 import os
 from .agent import DQNAgent
 import tensorflow as tf
+from time import sleep
 from collections import deque
 
-MODEL_NAME = 'new_model'
+#MODEL_NAME = 'new_model'
 
 # Number of training episodes
 EPISODES = 20000
 
 #  Stats settings
-AGGREGATE_STATS_EVERY = 20  # episodes
-SHOW_PREVIEW = False
+AGGREGATE_STATS_EVERY = 5  # episodes
 MIN_EPSILON = 0.001
 INITIAL_EPSILON = 0.1
 SAVE_MODEL_EVERY = 200
 
 class Broker:
 
-    def __init__(self, env, pickle_replay_mem = True, **kwargs):
+    def __init__(self, env, model_name, pickle_replay_mem=True, show_preview=False,train=True,log_data=True, **kwargs):
 
         # Openai-gym environment
         self.env = env
+
+        # Set model name
+        self.model_name = model_name
+
+        # Whether or not to show preview
+        self.show_preview = show_preview
+
+        # Whether or not to log data
+        self.log_data = log_data
+
+        # Whether or not to train
+        self.train_model = train
 
         # Whether or not we should pickle the replay memory
         self.pickle_replay_mem = pickle_replay_mem
 
         # DQN Agent
-        self.agent = DQNAgent(self.env.observation_shape,self.env.action_space.n,MODEL_NAME,**kwargs)
+        self.agent = DQNAgent(self.env.observation_shape,self.env.action_space.n,model_name,log_data=log_data,**kwargs)
 
         # If we have 3 actions, then duck is allowed
         # Otherwise it isn't
@@ -91,7 +103,7 @@ class Broker:
             while not done:
 
                 # Select new action using an epsilon greedy policy
-                if np.random.random() > self.epsilon:
+                if not self.train_model or np.random.random() > self.epsilon:
 
                     # Get action from Q table (exploitation)
                     action = np.argmax(self.agent.get_qs(current_state))
@@ -104,12 +116,19 @@ class Broker:
                 new_state = np.array(new_state)
 
                 #If preview is enabled, show the environment every now and then
-                if SHOW_PREVIEW and not episode % AGGREGATE_STATS_EVERY:
+                if self.show_preview and not episode % AGGREGATE_STATS_EVERY:
                     self.render_env()
 
                 # Update replay memory and perform a training step
                 self.agent.update_replay_memory((current_state, action, reward, new_state, done))
-                accuracy, loss = self.agent.train_step(done)
+                accuracy, loss = 1,0
+                if self.train_model:
+                    accuracy, loss = self.agent.train_step(done)
+                else:
+                    # Small delay when we are evaluating
+                    if self.duck:
+                        sleep(0.031)
+                    pass
 
                 # Append accuracies and losses to global stats
                 self.accuracies.append(accuracy)
@@ -117,6 +136,9 @@ class Broker:
 
                 current_state = new_state
                 step += 1
+
+            if self.show_preview and not episode % AGGREGATE_STATS_EVERY:
+                cv2.destroyWindow('Playback')
 
             # Append episode reward to a list and log stats (every given number of episodes)
             score = self.env.get_score()
@@ -132,7 +154,7 @@ class Broker:
                 avg_accuracy = sum(self.accuracies[-AGGREGATE_STATS_EVERY:])/len(self.accuracies[-AGGREGATE_STATS_EVERY:])
 
                 # Log aggregate stats
-                if self.agent.logger:
+                if self.agent.logger and self.log_data:
                     with self.agent.logger.as_default():
                         tf.summary.scalar('avg_reward',average_reward,step=episode)
                         tf.summary.scalar('min_reward', min_reward, step=episode)
@@ -143,10 +165,10 @@ class Broker:
                         print(f"Min is {min_reward}, max is {max_reward}, avg is {average_reward}")
 
                 # Save model every SAVE_MODEL_EVERY iterations
-                if episode % SAVE_MODEL_EVERY == 0:
+                if episode % SAVE_MODEL_EVERY == 0 and self.train_model:
 
                     # Create the model name and path based on stats
-                    model_name = f'{MODEL_NAME}__{episode}__{max_reward:_>7.2f}max_{average_reward:_>7.2f}avg__{int(time.time())}'
+                    model_name = f'{self.model_name}__{episode}__{max_reward:_>7.2f}max_{average_reward:_>7.2f}avg__{int(time.time())}'
                     model_path = os.path.join(self.model_folder,model_name)
                     self.agent.policy_model.save(model_path)
 
