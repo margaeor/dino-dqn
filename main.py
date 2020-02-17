@@ -6,10 +6,10 @@ import cv2
 import numpy as np
 import os
 import sys
-import dino_dqn.gym_chrome_dino2
-from dino_dqn.gym_chrome_dino2.utils.wrappers import make_dino
-from dino_dqn.dqn_agent.broker import Broker
 import argparse
+sys.path.append(os.path.dirname(__file__))
+
+
 
 def dir_path(string):
     if os.path.isdir(string):
@@ -34,7 +34,7 @@ parser.add_argument('--use-statistics',dest='use_stats', action='store_true',
                     help='Use statistics instead of images as input to the network. Those statistics include '
                          'distance between dino and obstacle, dino height, bird height, obstacle gap e.t.c')
 
-parser.add_argument('--model', type=dir_path,dest='model', help='Directory of saved model. '
+parser.add_argument('--model', type=dir_path,dest='model', help='Directory from which to restore saved model. '
                                                    'This directory must contain saved_model.pb')
 parser.add_argument('--episode', type=int,dest='episode', help='Number of episode where training starts from (default 1)')
 
@@ -42,8 +42,11 @@ parser.add_argument('--episode', type=int,dest='episode', help='Number of episod
 parser.set_defaults(duck=True, headless=False, accel=True, use_stats=False, model=None, evaluate=False, episode=1,logs=True)
 args = parser.parse_args()
 
-print(args)
 if __name__=="__main__":
+
+    import dino_dqn.gym_chrome_dino2
+    from dino_dqn.gym_chrome_dino2.utils.wrappers import make_dino
+    from dino_dqn.dqn_agent.broker import Broker
 
     images = not args.use_stats
 
