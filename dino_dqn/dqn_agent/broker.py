@@ -17,7 +17,7 @@ EPISODES = 20000
 AGGREGATE_STATS_EVERY = 5  # episodes
 MIN_EPSILON = 0.001
 INITIAL_EPSILON = 0.1
-SAVE_MODEL_EVERY = 200
+SAVE_MODEL_EVERY = 5
 
 class Broker:
 
@@ -49,8 +49,8 @@ class Broker:
         self.duck = (self.env.action_space.n == 3)
 
         # Define a different model path if duck is allowed or not
-        model_sub_folder = 'duck' if self.duck else 'no_duck'
-        self.model_folder = os.path.join('models',model_sub_folder)
+        #model_sub_folder = 'duck' if self.duck else 'no_duck'
+        self.model_folder = 'models'
 
         # Decaying variable used for exploration-exploitation
         self.epsilon = INITIAL_EPSILON
