@@ -14,10 +14,10 @@ from collections import deque
 EPISODES = 20000
 
 #  Stats settings
-AGGREGATE_STATS_EVERY = 5  # episodes
+AGGREGATE_STATS_EVERY = 20  # episodes
 MIN_EPSILON = 0.001
 INITIAL_EPSILON = 0.1
-SAVE_MODEL_EVERY = 5
+SAVE_MODEL_EVERY = 200
 
 class Broker:
 
