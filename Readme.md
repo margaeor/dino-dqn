@@ -7,7 +7,7 @@ The project also uses tensorboard logs that are saved in directory `./logs`
 # Setup
 The first step to use the repository is to clone it using:
 
-    git clone dino_dqn
+    git clone https://github.com/margaeor/dino-dqn.git
 
 Next, you will need to install the appropriate packages.
 For this project, I am using Anaconda and I have exported the environment into file `environment.yaml`.
