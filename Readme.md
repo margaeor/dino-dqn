@@ -5,9 +5,12 @@ version of package `gym-chrome-dino` and it is built using
 tensorflow 2.0.
 The project also uses tensorboard logs that are saved in directory `./logs`
 # Setup
-The first step to use the repository is to clone it using:
+The first step to use the repository is to clone it using git bash:
 
     git clone https://github.com/margaeor/dino-dqn.git
+
+If you don't have git bash, you can download the zip of the project
+and extract into a directory.
 
 Next, you will need to install the appropriate packages.
 For this project, I am using Anaconda and I have exported the environment into file `environment.yaml`.
@@ -117,7 +120,7 @@ Taking into account that this model uses duck we must not specify --no-duck.
 So, we would execute our script as follows:
 
 ```
-python main.py new_model --model ./models/duck/model2_2400 --evaluate
+python main.py new_model --model ./models/duck/model2_2400 --evaluate --no-logs
 ```
 
 # Tensorboard Logs
