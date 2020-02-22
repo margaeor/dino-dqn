@@ -120,7 +120,7 @@ Taking into account that this model uses duck we must not specify --no-duck.
 So, we would execute our script as follows:
 
 ```
-python main.py new_model --model ./models/duck/model2_2400 --evaluate
+python main.py new_model --model ./models/duck/model2_2400 --evaluate --no-logs
 ```
 
 # Tensorboard Logs
