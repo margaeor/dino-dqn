@@ -1,6 +1,6 @@
 *.exe
-logs/
-models/
+dino_dqn/logs/
+dino_dqn/models/
 checkpoints/
 __pycache__
 videos/
